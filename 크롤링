@@ -1,0 +1,105 @@
+# Instragram HashTags 가져오기
+
+#! pip install selenium
+#! pip install BeautifulSoup4
+#!pip install webdriver-manager
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup as bs
+import time
+import re
+from urllib.request import urlopen
+import json
+from pandas.io.json import json_normalize
+import pandas as pd, numpy as np
+import urllib.request
+import urllib.parse
+from bs4 import *
+
+#driver = webdriver.Chrome(ChromeDriverManager().install())
+
+# user용
+username='ganmale'
+browser = webdriver.Chrome(r"C:\Users\Administrator\.wdm\chromedriver\2.46\win32/chromedriver.exe")
+browser.get('https://www.instagram.com/'+username+'/?hl=en')
+Pagelength = browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+# 검색용
+hashtag='산'
+browser = webdriver.Chrome(r"C:\Users\Administrator\.wdm\chromedriver\2.46\win32/chromedriver.exe")
+browser.get('https://www.instagram.com/explore/tags/'+hashtag)
+Pagelength = browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+# 단순 페이지 정보 가져오기
+# links=[]
+# source = browser.page_source
+# data=bs(source, 'html.parser')
+# body = data.find('body')
+# script = body.find('span')
+# for link in script.findAll('a'):
+#      if re.match("/p", link.get('href')):
+#         links.append('https://www.instagram.com'+link.get('href'))
+
+# 여러 페이지 정보 가져 오기
+Pagelength = browser.execute_script("window.scrollTo(0, document.body.scrollHeight/1.5);")
+links=[]
+source = browser.page_source
+data=bs(source, 'html.parser')
+body = data.find('body')
+script = body.find('span')
+for link in script.findAll('a'):
+     if re.match("/p", link.get('href')):
+         links.append('https://www.instagram.com'+link.get('href'))
+
+#sleep time is required. If you don't use this Instagram may interrupt the script and doesn't scroll through pages
+time.sleep(5) 
+Pagelength = browser.execute_script("window.scrollTo(document.body.scrollHeight/1.5, document.body.scrollHeight/3.0);")
+source = browser.page_source
+data=bs(source, 'html.parser')
+body = data.find('body')
+script = body.find('span')
+for link in script.findAll('a'):
+     if re.match("/p", link.get('href')):
+         links.append('https://www.instagram.com'+link.get('href'))
+         
+# 링크 사진 분석 툴
+result=pd.DataFrame()
+for i in range(len(links)):
+    try:
+        page = urlopen(links[i]).read()
+        data=bs(page, 'html.parser')
+        body = data.find('body')
+        script = body.find('script')
+        raw = script.text.strip().replace('window._sharedData =', '').replace(';', '')
+        json_data=json.loads(raw)
+        posts =json_data['entry_data']['PostPage'][0]['graphql']
+        posts= json.dumps(posts)
+        posts = json.loads(posts)
+        x = pd.DataFrame.from_dict(json_normalize(posts), orient='columns') 
+        x.columns =  x.columns.str.replace("shortcode_media.", "")
+        result=result.append(x)
+       
+    except:
+        np.nan
+#Just check for the duplicates
+result = result.drop_duplicates(subset = 'shortcode')
+result.index = range(len(result.index))
+
+# 사진 가져오기
+import os
+import requests
+# result.index = range(len(result.index))
+# directory="D:\image"
+# for i in range(len(result)):
+#     r = requests.get(result['display_url'][i])
+#     with open(directory+result['shortcode'][i]+".jpg", 'wb') as f:
+#                     f.write(r.content)
+
+# HTML 호출 함수
+def get_html(url):
+    _html = ""
+    resp = requests.get(url)
+    if resp.status_code == 200:
+        _html = resp.text
+        return _html
+        
