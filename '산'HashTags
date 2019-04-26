@@ -1,0 +1,13 @@
+import pandas as pd
+import numpy as np
+
+# 크롤링에서 만든 CSV파일 호출
+data = pd.read_csv("Hashtags.csv")
+data.head()
+
+# Tag별 카운팅하고 CSV파일로 저장하기
+data2 = data.groupby(['"산"']).size().reset_index(name='counts')
+data2.sort_values(by=['counts'], axis=0,ascending=False,inplace=True)
+data2.reset_index(drop=True)
+data2.head(100)
+data2.to_csv("C:\Pythontest3/mountainHashs.csv",header=False,index=False,encoding='utf-8-sig')
