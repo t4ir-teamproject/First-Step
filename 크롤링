@@ -103,3 +103,28 @@ def get_html(url):
         _html = resp.text
         return _html
         
+# For문으로 만들기 
+hashtags =[]
+url =[]
+html =[]
+soup=[]
+for j in tqdm(range(len(links))):
+    url.append(links[j])
+    html.append(get_html(url[j]))
+    #time.sleep(2)
+    #print(html)
+    soup.append(bs(html[j],'html.parser',from_encoding='utf-8'))
+    hashtags.append(soup[j].find_all("meta", property='instapp:hashtags'))
+hashs =[]
+for i in range(len(hashtags)):
+    hashs.append(hashtags[i])
+makeitastring = ''.join(map(str, hashs))
+rr = makeitastring.split(" ")
+a=[]
+for j in range(len(rr)):
+    if 'content'in rr[j] :
+        a.append(rr[j])
+df = pd.DataFrame(a)
+results =df[0].str[8:]
+results
+# 해쉬테그 가지고 오기~~
