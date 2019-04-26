@@ -41,7 +41,7 @@ Pagelength = browser.execute_script("window.scrollTo(0, document.body.scrollHeig
 #         links.append('https://www.instagram.com'+link.get('href'))
 
 # 여러 페이지 정보 가져 오기
-Pagelength = browser.execute_script("window.scrollTo(0, document.body.scrollHeight/1.5);")
+Pagelength = browser.execute_script("window.scrollTo(0, document.body.scrollHeight/5);")
 links=[]
 source = browser.page_source
 data=bs(source, 'html.parser')
@@ -53,7 +53,27 @@ for link in script.findAll('a'):
 
 #sleep time is required. If you don't use this Instagram may interrupt the script and doesn't scroll through pages
 time.sleep(5) 
-Pagelength = browser.execute_script("window.scrollTo(document.body.scrollHeight/1.5, document.body.scrollHeight/3.0);")
+Pagelength = browser.execute_script("window.scrollTo(document.body.scrollHeight/5, document.body.scrollHeight/10);")
+source = browser.page_source
+data=bs(source, 'html.parser')
+body = data.find('body')
+script = body.find('span')
+for link in script.findAll('a'):
+     if re.match("/p", link.get('href')):
+         links.append('https://www.instagram.com'+link.get('href'))
+        
+time.sleep(5) 
+Pagelength = browser.execute_script("window.scrollTo(document.body.scrollHeight/10, document.body.scrollHeight/15);")
+source = browser.page_source
+data=bs(source, 'html.parser')
+body = data.find('body')
+script = body.find('span')
+for link in script.findAll('a'):
+     if re.match("/p", link.get('href')):
+         links.append('https://www.instagram.com'+link.get('href'))
+
+time.sleep(5) 
+Pagelength = browser.execute_script("window.scrollTo(document.body.scrollHeight/15, document.body.scrollHeight/20);")
 source = browser.page_source
 data=bs(source, 'html.parser')
 body = data.find('body')
