@@ -128,3 +128,5 @@ df = pd.DataFrame(a)
 results =df[0].str[8:]
 results
 # 해쉬테그 가지고 오기~~
+df2 = pd.DataFrame(results)
+df2.to_csv("C:\Pythontest3/Hashtags.csv",header=False,index=False,encoding='utf-8-sig')
