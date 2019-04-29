@@ -1,0 +1,63 @@
+# 필요 모듈 설치
+import os
+#! pip install graphviz
+import graphviz
+os.environ["PATH"] += os.pathsep + 'C:\\Program Files (x86)\\Graphviz2.38\\bin'
+from sklearn import datasets
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.ensemble import VotingClassifier
+from sklearn import tree
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import confusion_matrix
+from sklearn.utils.multiclass import unique_labels
+from sklearn.metrics import accuracy_score
+from sklearn import metrics
+import pandas as pd
+import numpy as np
+import itertools 
+import matplotlib.pyplot as plt 
+from sklearn import svm, datasets 
+#! pip install scikit-plot
+import scikitplot as skplt
+
+# 데이터 읽기
+data1 = pd.read_csv("Die.csv.csv",encoding=' CP949')
+data2 = pd.read_csv("PM2.5.csv.csv",encoding=' CP949')
+
+# 데이터 가공
+a=data1.values[0,2:].reshape(-1,1)
+b=data1.values[3,2:].reshape(-1,1)
+d=data2.values[0,2:].reshape(-1,1)
+
+# 사망확률 계산
+per1 = b/a*100
+per2 = c/a*100
+
+# 데이터 출력
+plt.scatter(d,per1,color="r")
+plt.show() # 선형관계를 그래프를 통해 알아냄
+
+# 학습시작
+xtest, xtrain, ytest, ytrain = train_test_split(d,per1, test_size=0.3,random_state=0)
+
+# 선형 로직 수행
+regressTest = LinearRegression()
+regressTest.fit(xtrain, ytrain)
+rResult = regressTest.predict(xtest)
+rResult
+
+# 예측값 출력 
+plt.scatter(xtest, rResult, color="red")
+plt.show()
+
+# 검증
+regressTest.predict([[38]])
+# 출력 array([[23.23390686]])
+# 결과 : 입력한 미세먼지의 농도가 진해 질 수록 사망 확률이 증가함을 알 수 있다. 
+
