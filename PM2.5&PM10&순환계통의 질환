@@ -29,31 +29,37 @@ import scikitplot as skplt
 # 데이터 읽기
 data1 = pd.read_csv("Die.csv.csv",encoding=' CP949')
 data2 = pd.read_csv("PM2.5.csv.csv",encoding=' CP949')
+data3 = pd.read_csv("PM10.csv",encoding='CP949')
 
 # 데이터 가공
 a=data1.values[0,2:].reshape(-1,1)
 b=data1.values[3,2:].reshape(-1,1)
 d=data2.values[0,2:].reshape(-1,1)
+c=data3.values[0,2:].reshape(-1,1)
 
 # 사망확률 계산
 per1 = b/a*100
-per2 = c/a*100
 
 # 데이터 출력
-plt.scatter(d,per1,color="r")
+plt.scatter(c,per1,color="r")
+plt.show()
+plt.scatter(d,per1,color="b")
 plt.show() # 선형관계를 그래프를 통해 알아냄
 
 # 학습시작
-xtest, xtrain, ytest, ytrain = train_test_split(d,per1, test_size=0.3,random_state=0)
+xtest, xtrain, ytest, ytrain = train_test_split(c,per1, test_size=0.3,random_state=0)
+xtest1, xtrain1, ytest1, ytrain1 = train_test_split(d,per1, test_size=0.3,random_state=0)
 
 # 선형 로직 수행
 regressTest = LinearRegression()
 regressTest.fit(xtrain, ytrain)
 rResult = regressTest.predict(xtest)
-rResult
+regressTest.fit(xtrain1, ytrain1)
+rResult1 = regressTest.predict(xtest1)
 
 # 예측값 출력 
 plt.scatter(xtest, rResult, color="red")
+plt.scatter(xtest1, rResult1, color="b")
 plt.show()
 
 # 검증
@@ -61,3 +67,37 @@ regressTest.predict([[38]])
 # 출력 array([[23.23390686]])
 # 결과 : 입력한 미세먼지의 농도가 진해 질 수록 사망 확률이 증가함을 알 수 있다. 
 
+# 두 미세먼지와 사망률 과의 관계를 알아보기
+
+# 두 데이터 합치기
+df = pd.DataFrame(c)
+df2 = pd.DataFrame(d)
+frame=pd.concat([df,df2],axis=1,keys=['PM2.5',"PM10"])
+
+# 데이터의 값만을 가져오기
+fra = frame.values
+
+# 학습 진행
+xtest2, xtrain2, ytest2, ytrain2 = train_test_split(fra,per1, test_size=0.3,random_state=0)
+
+# MultiValues에 대한 Regression 
+import statsmodels.api as sm
+regr = linear_model.LinearRegression()
+result=regr.fit(xtrain2, ytrain2).predict(xtest2)
+result
+
+# 절편값과 상관계수 
+print('Intercept(절편값): \n', regr.intercept_)
+print('Coefficients(상관계수): \n', regr.coef_)
+
+# 검증 하기
+New_PM2 = 2.75
+New_PM10 = 5.3
+print ('예측 사망률 %: \n', regr.predict([[New_PM2 ,New_PM10]]))
+# 출력 값 : 예측 사망률 %: [[18.57185813]]
+
+# 검증하기 2
+New_PM2_1 = 32
+New_PM10_1 = 40
+print ('예측 사망률 %: \n', regr.predict([[New_PM2_1 ,New_PM10_1]]))
+# 출력 값 : 예측 사망률 %: [[23.55471477]]
