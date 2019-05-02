@@ -1,0 +1,47 @@
+# !pip install tqdm
+# ! pip install selenium
+# ! pip install BeautifulSoup4
+# !pip install webdriver-manager
+#! pip install lxml
+# driver = webdriver.Chrome(ChromeDriverManager().install())
+# driver = webdriver.Chrome(r"C:\Users\Administrator\.wdm\chromedriver\2.46\win32/chromedriver.exe")
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium import webdriver
+from bs4 import BeautifulSoup as bs
+import time
+import re
+from urllib.request import urlopen
+import json
+from pandas.io.json import json_normalize
+import pandas as pd, numpy as np
+from urllib.request import urlopen, Request
+import urllib
+import bs4
+import pandas as pd
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+import ssl
+import re
+browser = webdriver.Chrome(ChromeDriverManager().install())
+browser.get('http://www.weather.go.kr/weather/observation/currentweather.jsp')
+context = ssl._create_unverified_context()
+result = urlopen('http://www.weather.go.kr/weather/observation/currentweather.jsp', context=context)
+bsObj = BeautifulSoup(result.read(), "html.parser")
+prd_names=str(bsObj.find("table",class_="table_develop3"))
+prd_names=re.sub('<.+?>', '', prd_names, 0).strip()
+value = prd_names.replace('\xa0', '')
+value1 = value.replace(',', '')
+value2 = value1.replace('\n', ',')
+title=value2.split(";")
+titles=title[1:]
+array=[]
+array2=[]
+for i in range(len(titles)):
+    array.append(titles[i].split(","))
+
+for j in range(len(array)):
+    array2.append(array[j][-12:])
+df = pd.DataFrame(array2)
+df.columns = ["지점","현재일기","시정km","운량1/10","중하운량","현재기온","이슬점온도","불쾌지수","일강수mm","습도%","풍향","풍속m/s"]
+df
