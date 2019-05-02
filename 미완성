@@ -1,0 +1,58 @@
+! pip graphviz
+! pip sklearn
+! pip matplotlib
+! pip install scikit-plot
+import os
+import graphviz
+os.environ["PATH"] += os.pathsep + 'C:\\Program Files (x86)\\Graphviz2.38\\bin'
+from sklearn import datasets
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.ensemble import VotingClassifier
+from sklearn import tree
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import confusion_matrix
+from sklearn.utils.multiclass import unique_labels
+from sklearn.metrics import accuracy_score
+from sklearn import metrics
+import pandas as pd
+import numpy as np
+import itertools 
+import matplotlib.pyplot as plt 
+from sklearn import svm, datasets 
+import scikitplot as skplt
+data = pd.read_csv("Report.csv",encoding='cp949',header=None)
+# data.drop([1], axis=0,inplace=True)
+headers = data.iloc[0]
+data  = pd.DataFrame(data.values[1:], columns=headers)
+data
+
+data1 =data.values
+# data1= data1.tolist()
+data1.shape
+
+sum=[]
+dead=[]
+for i in range(len(data1)):
+    if "사고건수" in data1[i]:
+        sum.append(data1[i])
+    if "사망자수" in data1[i]:
+        dead.append(data1[i])
+        
+df_sum = pd.DataFrame(sum)
+df_dead = pd.DataFrame(dead)
+df_sum
+
+sum_value=df_sum.values[:,2:]
+sum_year = df_sum.values[:,0].reshape(-1,1)
+
+dead_value =df_dead.values[:,2:]
+dead_year =df_dead.values[:,0].reshape(-1,1)
+
+dead_year.shape, dead_value.shape
+
+sum_year.shape, sum_value.shape
