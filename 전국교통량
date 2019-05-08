@@ -1,0 +1,61 @@
+# ! pip graphviz
+# ! pip sklearn
+# ! pip matplotlib
+# ! pip install scikit-plot
+import os
+# import graphviz
+os.environ["PATH"] += os.pathsep + 'C:\\Program Files (x86)\\Graphviz2.38\\bin'
+from sklearn import datasets
+from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.ensemble import VotingClassifier
+from sklearn import tree
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score
+from sklearn.metrics import confusion_matrix
+from sklearn.utils.multiclass import unique_labels
+from sklearn.metrics import accuracy_score
+from sklearn import metrics
+import pandas as pd
+import numpy as np
+import itertools 
+import matplotlib.pyplot as plt 
+from sklearn import svm, datasets 
+import scikitplot as skplt
+import requests
+
+def get_data():
+#     ServiceKey = "key=9862604514"
+#     dates = input()
+    ship_api_url = "http://data.ex.co.kr/openapi/trafficapi/trafficAll?key=9862604514&type=json"
+    request_data = requests.get(ship_api_url)
+    print(ship_api_url)
+    return request_data
+    
+data = get_data()
+data2=data.text
+data3=data2.split(",")
+import re 
+def cleanText(readData):
+    text = re.sub('[-=,#/\?^$.@*\"~&>}]','',readData)
+    return text
+
+traAmount=[]
+time =[]
+for i in range(len(data3)):
+    if "trafficAmout" in data3[i]:
+        traAmount.append(data3[i].replace('"',"").split(":"))
+    if "sumTm" in data3[i]:
+        time.append(cleanText(data3[i]).split(":"))   
+        
+df1 = pd.DataFrame(traAmount)
+df2 = pd.DataFrame(time)
+df3 = pd.concat([df1,df2], axis=1)
+df3.columns = ['구분', '교통량', '간격', '시간']
+df3['교통량'] = df3['교통량'].astype('float64') 
+
+df3.groupby(df3.시간)["교통량"].sum()
