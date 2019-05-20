@@ -1,0 +1,525 @@
+from bs4 import BeautifulSoup as bs
+import requests
+import os
+import pandas as pd
+import itertools 
+import requests
+import pprint
+import json
+import time
+import re
+import urllib
+import sys
+import pandas as pd
+from PyQt5.QtWidgets import QApplication, QTableView
+from PyQt5.QtCore import QAbstractTableModel, Qt
+from PyQt5 import QtCore, QtGui, QtWidgets
+import sys
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import QAbstractTableModel, Qt
+from PyQt5.QtWidgets import QApplication, QTableView
+
+class LogInDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setupUI()
+
+        self.id = None
+        self.password = None
+
+    def setupUI(self):
+        self.setGeometry(1100, 200, 300, 100)
+        self.setWindowTitle("입력")
+        self.setWindowIcon(QIcon('icon.png'))
+
+        label1 = QLabel("출발지: ")
+        label2 = QLabel("도착지: ")
+
+        self.lineEdit1 = QLineEdit()
+        self.lineEdit2 = QLineEdit()
+        self.pushButton1= QPushButton("입력")
+        self.pushButton1.clicked.connect(self.pushButtonClicked)
+
+        layout = QGridLayout()
+        layout.addWidget(label1, 0, 0)
+        layout.addWidget(self.lineEdit1, 0, 1)
+        layout.addWidget(self.pushButton1, 0, 2)
+        layout.addWidget(label2, 1, 0)
+        layout.addWidget(self.lineEdit2, 1, 1)
+
+        self.setLayout(layout)
+
+    def pushButtonClicked(self):
+        self.id = self.lineEdit1.text()
+        self.password = self.lineEdit2.text()
+        self.close()
+
+class MyWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setupUI()
+
+    def setupUI(self):
+        self.setGeometry(800, 200, 300, 300)
+        self.setWindowTitle("PyStock v0.1")
+        self.setWindowIcon(QIcon('icon.png'))
+
+        self.pushButton = QPushButton("입력")
+        self.pushButton.clicked.connect(self.pushButtonClicked)
+        self.label = QLabel()
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.pushButton)
+        layout.addWidget(self.label)
+
+        self.setLayout(layout)
+
+    def pushButtonClicked(self):
+        dlg = LogInDialog()
+        dlg.exec_()
+        departure = dlg.id
+        arrive = dlg.password
+        self.label.setText("출발지: %s 도착지: %s" % (departure, arrive))
+    def get_html(url):
+        _html = ""
+        resp = requests.get(url)
+        if resp.status_code == 200:
+            _html = resp.text
+            return _html
+    def make_chart():
+
+        now = time.localtime()
+
+        s = "%04d-%02d-%02d" % (now.tm_year, now.tm_mon, now.tm_mday)
+        s2 = "%02d:%02d:%02d"%(now.tm_hour, now.tm_min, now.tm_sec)
+
+        # 검색할 주소
+        location = departure
+        print("출발지:"+location)
+        location2 = arrive
+        print("도착지:"+location2)
+        # 요청 주소(구글맵) 
+        URL = 'http://maps.googleapis.com/maps/api/geocode/json?sensor=false&language=ko&address={}'.format(location)
+        # URL 가져오기
+        URL = 'https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyCTr_83ZtolTvfjAkgf_gwsAbDP-bBkwk4&sensor=false&language=ko&address={}'.format(location)
+        # URL로 보낸 Requst의 Response를 response 변수에 할당
+        response = requests.get(URL)
+        # JSON 파싱
+        data = response.json()
+        # lat, lon 추출
+        lat = data['results'][0]['geometry']['location']['lat']
+        lng = data['results'][0]['geometry']['location']['lng']
+        # print() 함수 대신 pprint.pprint() 함수를 사용하는 이유는 좀 더 보기 쉽게 출력하기 위함입니다.
+
+
+        # 요청 주소(구글맵) 
+        URL2 = 'http://maps.googleapis.com/maps/api/geocode/json?sensor=false&language=ko&address={}'.format(location2)
+        # URL 가져오기
+        URL2 = 'https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyCTr_83ZtolTvfjAkgf_gwsAbDP-bBkwk4&sensor=false&language=ko&address={}'.format(location2)
+        # URL로 보낸 Requst의 Response를 response 변수에 할당
+        response2 = requests.get(URL2)
+        # JSON 파싱
+        data2 = response2.json()
+        # lat, lon 추출
+        lat2 = data2['results'][0]['geometry']['location']['lat']
+        lng2 = data2['results'][0]['geometry']['location']['lng']
+        # print() 함수 대신 pprint.pprint() 함수를 사용하는 이유는 좀 더 보기 쉽게 출력하기 위함입니다.
+
+
+
+        url = "https://api2.sktelecom.com/tmap/routes/prediction?version=2&totalValue=2"
+        data = {
+          "routesInfo": {
+            "departure": {
+              "name": location,
+              "lon": lng,
+              "lat": lat,
+            },
+            "destination": {
+              "name": location2,
+              "lon": lng2,
+              "lat": lat2,
+            },
+            "predictionType": "departure",
+            "predictionTime": s+"T"+s2+"+0900",
+            "searchOption": "00",
+            "tollgateCarType": "car",
+            "trafficInfo" : "N"
+          }
+        }
+        headers = {'Content-type': 'application/json', 'Accept': 'text/plain','appKey': '3e23b3af-8311-4b15-9804-cca51d11212d'}
+        r = requests.post(url, data=json.dumps(data), headers=headers)
+        result = r.content
+        string=result.decode('utf-8')
+        splits=string.split("  ")
+        show=[]
+        for i in range(len(splits)):
+            if 'totalDistance' in splits[i]:
+                show.append(splits[i])
+            if 'totalTime' in splits[i]:
+                show.append(splits[i])
+            if 'totalFare' in splits[i]:
+                show.append(splits[i])
+            if 'taxiFare' in splits[i]:
+                show.append(splits[i])
+            if 'departureTime' in splits[i]:
+                show.append(splits[i])
+            if 'arrivalTime' in splits[i]:
+                show.append(splits[i])
+
+        list2=[]
+        for j in range(len(show)):
+            list2.append(show[j].split(":"))
+        times=[]
+        for k in [4,5]:
+            times.append(show[k].split(" "))
+        total=list2[0:3]
+        import re
+        def cleanText (readData):
+            text =re.sub('[,"\n\t]',"",readData)
+            return text
+        list2=[]
+        for j in range(len(show)):
+            list2.append(cleanText(show[j]).split(" "))
+        times=[]
+        for k in [4,5]:
+            times.append(cleanText(show[k]).split(" "))
+        total=list2[0:3]
+        df1 = pd.DataFrame(total)
+        df2 = pd.DataFrame(times)
+        df2.values[:,1][0]=df2.values[:,1][0][11:19]
+        df2.values[:,1][1]=df2.values[:,1][1][11:19]
+        df1.values[:,1] = df1.values[:,1].astype('int')
+        df3 = pd.concat([df1,df2],axis=0)
+        df3.columns = ["구분",'안내 내용']
+        Dataframe=df3.set_index('구분')
+        Dataframe = Dataframe.rename(index={'totalDistance:':"총거리(Km)",'totalTime:':"총시간(분)",'totalFare:':"톨게이트 비용(원)",'departureTime:':"출발시간",'arrivalTime:':"도착예정시간"})
+        Dataframe.values[0,0]=Dataframe.values[0,0]/1000
+        Dataframe.values[1,0]=Dataframe.values[1,0]/60
+
+        # 유류정보
+
+
+        url="https://finance.naver.com/marketindex/?tabSel=gold#tab_section"
+
+        def get_html(url):
+            _html = ""
+            resp = requests.get(url)
+            if resp.status_code == 200:
+                _html = resp.text
+                return _html
+
+        html = get_html(url)
+        soup = bs(html, 'html.parser',from_encoding='utf-8')
+        tag = soup.find('table', attrs={'class': 'tbl_exchange'})
+        tag2=tag.text
+        tag3=cleanText(tag2).split("/")
+        tag4=[]
+        for ma in range(len(tag3)):
+            tag4.append(tag3[ma].split(" "))
+        df4 = pd.DataFrame(tag4)
+        price=df4.values[1:,1]
+        df5 = pd.DataFrame({"휘발유":[price[0]],"고급휘발유":[price[1]], "경유":[price[2]], "두바이유":[price[3]],"브렌트유":[price[4]],"텍사스유":[price[5]]})
+        df6=df5.T
+
+        # 기름값
+        urls="https://finance.naver.com/marketindex/oilDetail.nhn?marketindexCd=OIL_GSL"
+        def get_htmls(urls):
+            _html = ""
+            resps = requests.get(urls)
+            if resps.status_code == 200:
+                _htmls = resps.text
+                return _htmls
+
+        htmls = get_htmls(urls)
+        soups = bs(htmls, 'html.parser',from_encoding='utf-8')
+        dd=pd.DataFrame(soups.text.replace("\n"," ").split(" "))
+        OIL_GSL_PRICE=float(cleanText(dd.values[17,0]))
+        urls2="https://finance.naver.com/marketindex/oilDetail.nhn?marketindexCd=OIL_LO"
+        def get_htmls2(urls2):
+            _html = ""
+            resps2 = requests.get(urls2)
+            if resps2.status_code == 200:
+                _htmls2 = resps2.text
+                return _htmls2
+
+        htmls2 = get_htmls2(urls2)
+        soups2 = bs(htmls2, 'html.parser',from_encoding='utf-8')
+        dd2=pd.DataFrame(soups2.text.replace("\n"," ").split(" "))
+        OIL_LO_PRICE=float(cleanText(dd2.values[17,0]))
+        X = Dataframe.values[0,0]
+        GSL_Total_price=X/16*OIL_GSL_PRICE
+        LO_Total_price=X/14*OIL_LO_PRICE
+        price = pd.DataFrame([GSL_Total_price,LO_Total_price], index=["휘발유 기름값(원):","경유 기름값(원):"],columns=['안내 내용'])
+
+        # 표 정리
+        df7=pd.concat([Dataframe,price])
+        Total_money=df7.values[2,0]+(df7.values[5,0]+df7.values[6,0])/2
+        df8 = pd.DataFrame([Total_money],index=["예상 총 비용"],columns=["안내 내용"])
+        Final_Chart=pd.concat([df7,df8])
+        pd.options.display.float_format='{:.2f}'.format
+        table = Final_Chart
+        df = table
+        
+        url = "https://search.shopping.naver.com/best100v2/main.nhn"
+        def get_html(url):
+            _html = ""
+            resp = requests.get(url)
+            if resp.status_code == 200:
+                _html = resp.text
+                return _html
+
+        def cleanText (readData):
+            text =re.sub("[,""'\n\t]","",readData)
+            return text
+        html=get_html(url)
+        soup=bs(html,'html.parser',from_encoding='utf-8')
+        import re
+        img = soup.find_all('img', attrs={'_productLazyImg'})
+        num = soup.find_all('span', attrs={'class': 'num'})
+        list1 = []
+        for i in range(len(img)):
+            list1.append(str(img[i]).split('"'))
+        list2 = []
+        for j in range(len(num)):
+            list2.append(cleanText(num[j].text))
+        name =[]
+        pic_ad =[]
+        for k in range(len(list1)):
+            name.append(list1[k][1])
+            pic_ad.append(list1[k][5])
+        name_df = pd.DataFrame(name)
+        price_df = pd.DataFrame(list2)
+        List = pd.concat([name_df,price_df],axis=1)
+        Shop_List=List.drop([0,1,2,3,4]).reset_index(drop=True)
+        Shop_List.values[:,1].astype(int)
+
+        clothes=Shop_List[:6]
+        grocery = Shop_List[7:13]
+        cosmatic=Shop_List[14:20]
+        device=Shop_List[21:27]
+        furniture=Shop_List[28:34]
+        baby=Shop_List[35:41]
+        sports=Shop_List[42:48]
+        food=Shop_List[49:55]
+        health=Shop_List[56:62]
+
+        clothes.columns = ["패션의류 인기상품",'가격']
+        grocery.columns = ["패션잡화 인기상품",'가격']
+        cosmatic.columns = ["화장품/미용 인기상품",'가격']
+        device.columns = ["디지털/가전 인기상품",'가격']
+        furniture.columns = ["가구/인테리어 인기상품",'가격']
+        baby.columns = ["출산/육아 인기상품",'가격']
+        sports.columns = ["스포츠/레저 인기상품",'가격']
+        food.columns = ["식품 인기상품",'가격']
+        health.columns = ["생활건강 인기상품",'가격']
+
+        clothes.reset_index(drop=True,inplace=True)
+        grocery.reset_index(drop=True,inplace=True)
+        cosmatic.reset_index(drop=True,inplace=True)
+        device.reset_index(drop=True,inplace=True)
+        furniture.reset_index(drop=True,inplace=True)
+        baby.reset_index(drop=True,inplace=True)
+        sports.reset_index(drop=True,inplace=True)
+        food.reset_index(drop=True,inplace=True)
+        health.reset_index(drop=True,inplace=True)
+
+        clothes=clothes.set_index("패션의류 인기상품")
+        grocery = grocery.set_index("패션잡화 인기상품")
+        cosmatic = cosmatic.set_index("화장품/미용 인기상품")
+        device = device.set_index("디지털/가전 인기상품")
+        furniture = furniture.set_index("가구/인테리어 인기상품")
+        baby = baby.set_index("출산/육아 인기상품")
+        sports =sports.set_index("스포츠/레저 인기상품")
+        food = food.set_index("식품 인기상품")
+        health = health.set_index("생활건강 인기상품")
+
+
+
+        now = time.localtime()
+        s = "%04d-%02d-%02d" % (now.tm_year, now.tm_mon, now.tm_mday)
+        clothes.to_csv(s+"패션의류 인기상품.csv", sep=',', encoding='cp949')
+        grocery.to_csv(s+"패션잡화 인기상품.csv", sep=',', encoding='cp949')
+        cosmatic.to_csv(s+"화장품&미용 인기상품.csv", sep=',', encoding='cp949')
+        device.to_csv(s+"디지털&가전 인기상품.csv", sep=',', encoding='cp949')
+        furniture.to_csv(s+"가구&인테리어 인기상품.csv", sep=',', encoding='cp949')
+        baby.to_csv(s+"출산&육아 인기상품.csv", sep=',', encoding='cp949')
+        sports.to_csv(s+"스포츠&레저 인기상품.csv", sep=',', encoding='cp949')
+        food.to_csv(s+"식품 인기상품.csv", sep=',', encoding='cp949')
+        health.to_csv(s+"생활건강 인기상품.csv", sep=',', encoding='cp949')
+        
+        now = time.localtime()
+        s = "%04d-%02d-%02d" % (now.tm_year, now.tm_mon, now.tm_mday)
+        data_clothes = pd.read_csv(s+"패션의류 인기상품.csv", encoding='cp949',engine='python')
+        data_grocery = pd.read_csv(s+"패션잡화 인기상품.csv", encoding='cp949',engine='python')
+        data_cosmetic = pd.read_csv(s+"화장품&미용 인기상품.csv", encoding='cp949',engine='python')
+        data_devices = pd.read_csv(s+"디지털&가전 인기상품.csv", encoding='cp949',engine='python')
+        data_furniture = pd.read_csv(s+"가구&인테리어 인기상품.csv", encoding='cp949',engine='python')
+        data_baby = pd.read_csv(s+"출산&육아 인기상품.csv", encoding='cp949',engine='python')
+        data_sport= pd.read_csv(s+"스포츠&레저 인기상품.csv", encoding='cp949',engine='python')
+        data_food = pd.read_csv(s+"식품 인기상품.csv", encoding='cp949',engine='python')
+        data_health = pd.read_csv(s+"생활건강 인기상품.csv", encoding='cp949',engine='python')
+        val_clothes=data_clothes.values[:,1].tolist()
+        val_grocery=data_grocery.values[:,1].tolist()
+        val_cosmetic=data_cosmetic.values[:,1].tolist()
+        val_devices=data_devices.values[:,1].tolist()
+        val_furniture=data_furniture.values[:,1].tolist()
+        val_baby=data_baby.values[:,1].tolist()
+        val_sport=data_sport.values[:,1].tolist()
+        val_food=data_food.values[:,1].tolist()
+        val_health=data_health.values[:,1].tolist()
+
+        val=table.values[7,0]*1.3
+
+        showing_clothes_list=[]
+        showing_grocery_list=[]
+        showing_cosmetic_list=[]
+        showing_device_list=[]
+        showing_furniture_list=[]
+        showing_baby_list=[]
+        showing_sport_list=[]
+        showing_food_list=[]
+        showing_heath_list=[]
+        for ai in range(len(val_clothes)):
+            if val_clothes[ai] <= val:
+                showing_clothes_list.append(val_clothes[ai])
+            else:
+                showing_grocery_list.append(int(0))
+            if val_grocery[ai] <= val:
+                showing_grocery_list.append(val_grocery[ai])
+            else:
+                showing_grocery_list.append(int(0))
+            if val_cosmetic[ai] <= val:
+                showing_cosmetic_list.append(val_cosmetic[ai])
+            else:
+                showing_cosmetic_list.append(int(0))
+            if val_devices[ai] <= val:
+                showing_device_list.append(val_devices[ai])
+            else:
+                showing_device_list.append(int(0))
+            if val_furniture[ai] <= val:
+                showing_furniture_list.append(val_furniture[ai])
+            else:
+                showing_furniture_list.append(int(0))
+            if val_baby[ai] <= val:
+                showing_baby_list.append(val_baby[ai])
+            else:
+                showing_baby_list.append(int(0))
+            if val_sport[ai] <= val:
+                showing_sport_list.append(val_sport[ai])
+            else:
+                showing_sport_list.append(int(0))
+            if val_food[ai] <= val:
+                showing_food_list.append(val_food[ai])
+            else:
+                showing_food_list.append(int(0))
+            if val_health[ai] <= val:
+                showing_heath_list.append(val_health[ai])
+            else:
+                showing_heath_list.append(int(0))
+        a=[]
+        all_clothes=data_clothes.values[:,:].tolist()
+        all_grocery=data_grocery.values[:,:].tolist()
+        all_cosmetic=data_cosmetic.values[:,:].tolist()
+        all_devices=data_devices.values[:,:].tolist()
+        all_furniture=data_furniture.values[:,:].tolist()
+        all_baby=data_baby.values[:,:].tolist()
+        all_sport=data_sport.values[:,:].tolist()
+        all_food=data_food.values[:,:].tolist()
+        all_health=data_health.values[:,:].tolist()
+        list_clothes=[]
+        list_grocery=[]
+        list_cosmetic=[]
+        list_devices=[]
+        list_furniture=[]
+        list_baby=[]
+        list_sport=[]
+        list_food=[]
+        list_health=[]
+        for bi in all_clothes:
+            if bi[:][1] in showing_clothes_list:
+                list_clothes.append(bi)
+            else:
+                list_clothes.append(['해당상품이 존재하지 않습니다','해당상품이 존재하지 않습니다'])
+        for bi in all_grocery:
+            if bi[:][1] in showing_grocery_list:
+                list_grocery.append(bi)
+            else:
+                list_grocery.append(['해당상품이 존재하지 않습니다','해당상품이 존재하지 않습니다'])
+        for bi in all_cosmetic:
+            if bi[:][1] in showing_cosmetic_list:
+                list_cosmetic.append(bi)
+            else:
+                list_cosmetic.append(['해당상품이 존재하지 않습니다','해당상품이 존재하지 않습니다'])
+        for bi in all_devices:
+            if bi[:][1] in showing_device_list:
+                list_devices.append(bi)
+            else:
+                list_devices.append(['해당상품이 존재하지 않습니다','해당상품이 존재하지 않습니다'])
+        for bi in all_furniture:
+            if bi[:][1] in showing_furniture_list:
+                list_furniture.append(bi)
+            else:
+                list_furniture.append(['해당상품이 존재하지 않습니다','해당상품이 존재하지 않습니다'])
+        for bi in all_baby:
+            if bi[:][1] in showing_baby_list:
+                list_baby.append(bi)
+            else:
+                list_baby.append(['해당상품이 존재하지 않습니다','해당상품이 존재하지 않습니다'])
+        for bi in all_sport:
+            if bi[:][1] in showing_sport_list:
+                list_sport.append(bi)
+            else:
+                list_sport.append(['해당상품이 존재하지 않습니다','해당상품이 존재하지 않습니다'])
+        for bi in all_food:
+            if bi[:][1] in showing_food_list:
+                list_food.append(bi)
+            else:
+                list_food.append(['해당상품이 존재하지 않습니다','해당상품이 존재하지 않습니다'])
+        for bi in all_health:
+            if bi[:][1] in showing_heath_list:
+                list_health.append(bi)
+            else:
+                list_health.append(['해당상품이 존재하지 않습니다','해당상품이 존재하지 않습니다'])
+        df_clothes = pd.DataFrame(list_clothes)
+        df_grocery = pd.DataFrame(list_grocery)
+        df_cosmetic = pd.DataFrame(list_cosmetic)
+        df_devices = pd.DataFrame(list_devices)
+        df_furniture = pd.DataFrame(list_furniture)
+        df_baby = pd.DataFrame(list_baby)
+        df_sport = pd.DataFrame(list_sport)
+        df_food = pd.DataFrame(list_food)
+        df_health = pd.DataFrame(list_health)
+        df_clothes.columns = ["패션의류 인기상품",'가격']
+        df_grocery.columns = ["패션잡화 인기상품",'가격']
+        df_cosmetic.columns = ["화장품/미용 인기상품",'가격']
+        df_devices.columns = ["디지털/가전 인기상품",'가격']
+        df_furniture.columns = ["가구/인테리어 인기상품",'가격']
+        df_baby.columns = ["출산/육아 인기상품",'가격']
+        df_sport.columns = ["스포츠/레저 인기상품",'가격']
+        df_food.columns = ["식품 인기상품",'가격']
+        df_health.columns = ["생활건강 인기상품",'가격']
+        df_clothes=df_clothes.set_index("패션의류 인기상품")
+        df_grocery = df_grocery.set_index("패션잡화 인기상품")
+        df_cosmetic = df_cosmetic.set_index("화장품/미용 인기상품")
+        df_devices = df_devices.set_index("디지털/가전 인기상품")
+        df_furniture = df_furniture.set_index("가구/인테리어 인기상품")
+        df_baby = df_baby.set_index("출산/육아 인기상품")
+        df_sport =df_sport.set_index("스포츠/레저 인기상품")
+        df_food = df_food.set_index("식품 인기상품")
+        df_health = df_health.set_index("생활건강 인기상품")
+        pieces = {'패션의류 인기상품': df_clothes, 
+                  '패션잡화 인기상품': df_grocery,
+                  "화장품/미용 인기상품": df_cosmetic,
+                  "디지털/가전 인기상품": df_devices,
+                  "가구/인테리어 인기상품":df_furniture,
+                  "출산/육아 인기상품":df_baby,
+                  "스포츠/레저 인기상품":df_sport,
+                  "식품 인기상품":df_food,
+                  "생활건강 인기상품":df_health}
+        Final_view=pd.concat(pieces)
+        indexNames = Final_view[ Final_view['가격'] == '해당상품이 존재하지 않습니다' ].index
+        # Delete these row indexes from dataFrame
+        Final_view.drop(indexNames , inplace=True)
+        
